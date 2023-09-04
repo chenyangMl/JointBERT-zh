@@ -155,7 +155,7 @@ def split_Mix_word(str1):
     prevtype = -1   # 标记上一次的type
     tmpword = ""    # 记录需要合并的字符
     for i, (char, type1) in enumerate(zip(str1, typeList)):
-        if tmpword and prevtype != type1:
+        if tmpword and prevtype != type1 and not(prevtype==1 and type1==2):
             words.append(tmpword)
             tmpword = ""; prevtype = type1
         if type1==0:
@@ -171,10 +171,12 @@ def split_Mix_word(str1):
 if __name__ == "__main__":
     # 中英混合分词测试
     strlist = [
-        "In this page, we will show you how to share a model增加样本#数量12",
-        "请问In this page, we will show you how to share a model",
-        "12加14等于多少?",
-        "我喜欢旅游"
+        # "play the top20 best chicane songs on deezer",
+        "add the entire album into indie español"
+        # "In this page, we will show you how to share a model增加样本#数量12",
+        # "请问In this page, we will show you how to share a model",
+        # "12加14等于多少?",
+        # "我喜欢旅游"
         ]
     for str1 in strlist:
         words = split_Mix_word(str1)

@@ -66,8 +66,9 @@ class InputFeatures(object):
 class JointProcessor(object):
     """Processor for the JointBERT data set """
 
-    def __init__(self, args):
+    def __init__(self, args, task):
         self.args = args
+        self.task = task
         self.intent_labels = get_intent_labels(args)
         self.slot_labels = get_slot_labels(args)
 
@@ -91,8 +92,11 @@ class JointProcessor(object):
         for i, (text, intent, slot) in enumerate(zip(texts, intents, slots)):
             guid = "%s-%s" % (set_type, i)
             # 1. input_text
-            # words = text.split()  # Some are spaced twice
-            words = split_Mix_word(text)
+            if self.task=="generalQA":
+                text = text.replace("-", "")
+                words = split_Mix_word(text)
+            else:
+                words = text.split()  # Some are spaced twice
             # 2. intent
             intent_label = self.intent_labels.index(intent) if intent in self.intent_labels else self.intent_labels.index("UNK")
             # 3. slot
@@ -210,7 +214,7 @@ def convert_examples_to_features(examples, max_seq_len, tokenizer,
 
 
 def load_and_cache_examples(args, tokenizer, mode):
-    processor = processors[args.task](args)
+    processor = processors[args.task](args, args.task)
 
     # Load data features from cache or dataset file
     cached_features_file = os.path.join(

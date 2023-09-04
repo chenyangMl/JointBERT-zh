@@ -23,8 +23,7 @@ def main(args):
         trainer.load_model()
         trainer.evaluate("test")
 
-
-if __name__ == '__main__':
+def args_parse():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--task", default=None, required=True, type=str, help="The name of the task to train")
@@ -68,6 +67,10 @@ if __name__ == '__main__':
 
     parser.add_argument("--use_cache", action="store_true", help="Whether to use cache dataset")
     parser.add_argument("--cache_dir", type=str, default="data/cached", help="Where to cache dataset")
+    return parser
+
+if __name__ == '__main__':
+    parser = args_parse()
     args = parser.parse_args()
 
     args.model_name_or_path = MODEL_PATH_MAP[args.model_type]

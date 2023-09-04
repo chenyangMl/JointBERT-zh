@@ -46,11 +46,11 @@ def read_input_file(pred_config):
     
     with open(pred_config.input_file, "r", encoding="utf-8") as f:
         for line in f:
-            if 0:
+            if pred_config.task=="generalQA":
+                words = split_Mix_word(line.strip())
+            else:
                 line = line.strip()
                 words = line.split()
-            else:
-                words = split_Mix_word(line.strip())
             lines.append(words)
 
     return lines
@@ -178,7 +178,7 @@ def predict(pred_config):
     # Convert input file to TensorDataset
     pad_token_label_id = args.ignore_index
     tokenizer = load_tokenizer(args)
-    lines = read_input_file(pred_config) # 英文空格分词
+    lines = read_input_file(pred_config)
     dataset = convert_input_file_to_tensor_dataset(lines, pred_config, args, tokenizer, pad_token_label_id)
 
     # Predict
@@ -253,14 +253,11 @@ def predict(pred_config):
 
 if __name__ == "__main__":
     init_logger()
-    parser = argparse.ArgumentParser()
-
+    # parser = argparse.ArgumentParser()
+    from main import args_parse
+    parser = args_parse()
     parser.add_argument("--input_file", default="sample_pred_in.txt", type=str, help="Input file for prediction")
     parser.add_argument("--output_file", default="sample_pred_out.txt", type=str, help="Output file for prediction")
-    parser.add_argument("--model_dir", default="./atis_model", type=str, help="Path to save, load model")
-
     parser.add_argument("--batch_size", default=32, type=int, help="Batch size for prediction")
-    parser.add_argument("--no_cuda", action="store_true", help="Avoid using CUDA when available")
-
     pred_config = parser.parse_args()
     predict(pred_config)
