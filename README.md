@@ -38,7 +38,7 @@
 
 ```bash
 $ python3 predict.py --task generalQA \
-										 --input_file data/testcase/generalQAtest.txt \
+                     --input_file data/testcase/generalQAtest.txt \
                      --output_file local/generalQAtest_predict.txt \
                      --model_dir out/generalQA
 ```
