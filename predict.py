@@ -4,12 +4,14 @@ import argparse
 from tqdm import tqdm, trange
 
 import numpy as np
+import requests
 import torch
 from torch.utils.data import TensorDataset, DataLoader, SequentialSampler
 
-from utils import init_logger, load_tokenizer, get_intent_labels, get_slot_labels, MODEL_CLASSES
+from utils import init_logger, load_tokenizer, get_intent_labels, get_slot_labels, MODEL_CLASSES, split_Mix_word
 
 logger = logging.getLogger(__name__)
+
 
 
 def get_device(pred_config):
@@ -41,10 +43,14 @@ def load_model(pred_config, args, device):
 
 def read_input_file(pred_config):
     lines = []
+    
     with open(pred_config.input_file, "r", encoding="utf-8") as f:
         for line in f:
-            line = line.strip()
-            words = line.split()
+            if 0:
+                line = line.strip()
+                words = line.split()
+            else:
+                words = split_Mix_word(line.strip())
             lines.append(words)
 
     return lines
@@ -124,8 +130,42 @@ def convert_input_file_to_tensor_dataset(lines,
 
     return dataset
 
+def download_file(url: str, fname: str, chunk_size=1024):
+    """Helper function to download a file from a given url"""
+    resp = requests.get(url, stream=True)
+    total = int(resp.headers.get("content-length", 0))
+    with open(fname, "wb") as file, tqdm(
+        desc=fname,
+        total=total,
+        unit="iB",
+        unit_scale=True,
+        unit_divisor=1024,
+    ) as bar:
+        for data in resp.iter_content(chunk_size=chunk_size):
+            size = file.write(data)
+            bar.update(size)
+            
+def download(model_dir):
+    """下载模型"""
+    if not model_dir.endswith("generalQA"): return None
+    url = "https://huggingface.co/52AI/generalQA_intent_slotFilling/resolve/main"
+    filenames = ["config.json", "pytorch_model.bin", "training_args.bin"]
+    os.makedirs(model_dir, exist_ok=True)
+    def download_with_url(data_url, data_filename):
+        if not os.path.exists(data_filename):
+            print(f"Downloading {data_url} to {data_filename}...")
+            download_file(data_url, data_filename)
+        else:
+            print(f"{data_filename} already exists, skipping download...")
+    for filename in filenames:
+        data_url = os.path.join(url, filename)
+        data_filename = os.path.join(model_dir, filename)
+        download_with_url(data_url, data_filename)
+
 
 def predict(pred_config):
+    # download pretrained model from huggingFace
+    download(pred_config.model_dir)
     # load model and args
     args = get_args(pred_config)
     device = get_device(pred_config)
@@ -138,7 +178,7 @@ def predict(pred_config):
     # Convert input file to TensorDataset
     pad_token_label_id = args.ignore_index
     tokenizer = load_tokenizer(args)
-    lines = read_input_file(pred_config)
+    lines = read_input_file(pred_config) # 英文空格分词
     dataset = convert_input_file_to_tensor_dataset(lines, pred_config, args, tokenizer, pad_token_label_id)
 
     # Predict
@@ -196,6 +236,8 @@ def predict(pred_config):
                 slot_preds_list[i].append(slot_label_map[slot_preds[i][j]])
 
     # Write to output file
+    outdir  = os.path.dirname(pred_config.output_file)
+    if not os.path.exists(outdir): os.makedirs(outdir)
     with open(pred_config.output_file, "w", encoding="utf-8") as f:
         for words, slot_preds, intent_pred in zip(lines, slot_preds_list, intent_preds):
             line = ""
@@ -204,9 +246,9 @@ def predict(pred_config):
                     line = line + word + " "
                 else:
                     line = line + "[{}:{}] ".format(word, pred)
-            f.write("<{}> -> {}\n".format(intent_label_lst[intent_pred], line.strip()))
+            f.write("<{}> -> {}\n\n".format(intent_label_lst[intent_pred], line.strip()))
 
-    logger.info("Prediction Done!")
+    logger.info(f"Prediction Done! savepath = {pred_config.output_file}")
 
 
 if __name__ == "__main__":
