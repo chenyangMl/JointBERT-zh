@@ -45,7 +45,7 @@ class DataSynthesis:
         """生成标签数据"""
         samples = []
         for item in tqdm(corpusList, desc=intent):  #源数据通过模板进行数据扩展
-            item = item.strip()
+            item = item.strip("-").strip()
             # 生成slot标签, 这里生成的都是单槽位的数据  样例: template="翻译:{TransEnZhSentence}", 
             template = random.choice(intentTemplates)
             pattern = r".*\{(.*)\}.*"

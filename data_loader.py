@@ -93,7 +93,6 @@ class JointProcessor(object):
             guid = "%s-%s" % (set_type, i)
             # 1. input_text
             if self.task=="generalQA":
-                text = text.replace("-", "")
                 words = split_Mix_word(text)
             else:
                 words = text.split()  # Some are spaced twice
